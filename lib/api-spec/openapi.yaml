@@ -3,20 +3,28 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: ProcureTrack API - Purchase Order Management System
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: purchase-orders
+    description: Purchase order management
+  - name: suppliers
+    description: Supplier management within purchase orders
+  - name: notifications
+    description: In-app notification management
+  - name: dashboard
+    description: Dashboard summary and analytics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +32,290 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /purchase-orders:
+    get:
+      operationId: listPurchaseOrders
+      tags: [purchase-orders]
+      summary: List purchase orders (admin gets all, client gets own)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of purchase orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PurchaseOrder"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: createPurchaseOrder
+      tags: [purchase-orders]
+      summary: Create a purchase order (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseOrderInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseOrder"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /purchase-orders/{id}:
+    get:
+      operationId: getPurchaseOrder
+      tags: [purchase-orders]
+      summary: Get a purchase order by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Purchase order details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseOrderDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updatePurchaseOrder
+      tags: [purchase-orders]
+      summary: Update a purchase order (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseOrderUpdate"
+      responses:
+        "200":
+          description: Updated purchase order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseOrder"
+    delete:
+      operationId: deletePurchaseOrder
+      tags: [purchase-orders]
+      summary: Delete a purchase order (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /purchase-orders/{orderId}/suppliers:
+    get:
+      operationId: listOrderSuppliers
+      tags: [suppliers]
+      summary: List suppliers for a purchase order
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of suppliers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Supplier"
+    post:
+      operationId: addSupplier
+      tags: [suppliers]
+      summary: Add a supplier to a purchase order (admin only)
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupplierInput"
+      responses:
+        "201":
+          description: Created supplier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Supplier"
+
+  /suppliers/{id}:
+    patch:
+      operationId: updateSupplier
+      tags: [suppliers]
+      summary: Update supplier details or status (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupplierUpdate"
+      responses:
+        "200":
+          description: Updated supplier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Supplier"
+    delete:
+      operationId: deleteSupplier
+      tags: [suppliers]
+      summary: Delete a supplier (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications for current user
+      parameters:
+        - name: unread
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+    post:
+      operationId: sendNotification
+      tags: [notifications]
+      summary: Send a notification to a client (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationInput"
+      responses:
+        "201":
+          description: Created notification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated notification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    patch:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read for current user
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /clients:
+    get:
+      operationId: listClients
+      tags: [purchase-orders]
+      summary: List all clients (admin only, for assigning orders)
+      responses:
+        "200":
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClientUser"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +326,313 @@ components:
       required:
         - status
 
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    PurchaseOrder:
+      type: object
+      properties:
+        id:
+          type: string
+        poNumber:
+          type: string
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, active, completed, cancelled]
+        clientId:
+          type: string
+        clientName:
+          type: ["string", "null"]
+        clientEmail:
+          type: ["string", "null"]
+        totalAmount:
+          type: ["number", "null"]
+        currency:
+          type: string
+        supplierCount:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - poNumber
+        - title
+        - status
+        - clientId
+        - currency
+        - supplierCount
+        - createdAt
+        - updatedAt
+
+    PurchaseOrderDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        poNumber:
+          type: string
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, active, completed, cancelled]
+        clientId:
+          type: string
+        clientName:
+          type: ["string", "null"]
+        clientEmail:
+          type: ["string", "null"]
+        totalAmount:
+          type: ["number", "null"]
+        currency:
+          type: string
+        suppliers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Supplier"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - poNumber
+        - title
+        - status
+        - clientId
+        - currency
+        - suppliers
+        - createdAt
+        - updatedAt
+
+    PurchaseOrderInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        clientId:
+          type: string
+        totalAmount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, completed, cancelled]
+      required:
+        - title
+        - clientId
+
+    PurchaseOrderUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        clientId:
+          type: string
+        totalAmount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, completed, cancelled]
+
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: string
+        purchaseOrderId:
+          type: string
+        name:
+          type: string
+        trackingNumber:
+          type: ["string", "null"]
+        trackingUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, processing, shipped, delivered]
+        notes:
+          type: ["string", "null"]
+        estimatedDelivery:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - purchaseOrderId
+        - name
+        - status
+        - createdAt
+        - updatedAt
+
+    SupplierInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        trackingNumber:
+          type: string
+        trackingUrl:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, shipped, delivered]
+        notes:
+          type: string
+        estimatedDelivery:
+          type: string
+      required:
+        - name
+
+    SupplierUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        trackingNumber:
+          type: string
+        trackingUrl:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, shipped, delivered]
+        notes:
+          type: string
+        estimatedDelivery:
+          type: string
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        recipientId:
+          type: string
+        senderId:
+          type: ["string", "null"]
+        senderName:
+          type: ["string", "null"]
+        title:
+          type: string
+        message:
+          type: string
+        orderId:
+          type: ["string", "null"]
+        orderPoNumber:
+          type: ["string", "null"]
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - recipientId
+        - title
+        - message
+        - isRead
+        - createdAt
+
+    NotificationInput:
+      type: object
+      properties:
+        recipientId:
+          type: string
+        title:
+          type: string
+          minLength: 1
+        message:
+          type: string
+          minLength: 1
+        orderId:
+          type: string
+      required:
+        - recipientId
+        - title
+        - message
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalOrders:
+          type: integer
+        activeOrders:
+          type: integer
+        completedOrders:
+          type: integer
+        draftOrders:
+          type: integer
+        cancelledOrders:
+          type: integer
+        totalSuppliers:
+          type: integer
+        suppliersByStatus:
+          type: object
+          properties:
+            pending:
+              type: integer
+            processing:
+              type: integer
+            shipped:
+              type: integer
+            delivered:
+              type: integer
+          required:
+            - pending
+            - processing
+            - shipped
+            - delivered
+        unreadNotifications:
+          type: integer
+        recentOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/PurchaseOrder"
+      required:
+        - totalOrders
+        - activeOrders
+        - completedOrders
+        - draftOrders
+        - cancelledOrders
+        - totalSuppliers
+        - suppliersByStatus
+        - unreadNotifications
+        - recentOrders
+
+    ClientUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: ["string", "null"]
+      required:
+        - id
+        - email

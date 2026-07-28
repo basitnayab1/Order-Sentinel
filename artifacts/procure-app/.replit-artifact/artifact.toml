@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "ProcureTrack"
+version = "1.0.0"
+id = "artifacts/procure-app"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23611
+
+[services.development]
+run = "pnpm --filter @workspace/procure-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/procure-app", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/procure-app/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23611"
+BASE_PATH = "/"
